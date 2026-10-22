@@ -1,0 +1,25 @@
+name: Swiss Fuel Price Auto-Sync
+
+on:
+  schedule:
+    # Läuft automatisch alle 30 Minuten
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Erlaubt auch manuelles Ausführen per Klick auf GitHub
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v3
+
+      - name: Python einrichten
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Abhängigkeiten installieren
+        run: pip install requests
+
+      - name: Preis-Sync ausführen
+        run: python sync_swiss_prices.py
