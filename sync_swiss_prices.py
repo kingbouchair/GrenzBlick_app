@@ -3,7 +3,7 @@ import datetime
 import requests
 
 # Supabase Zugangsdaten
-SUPABASE_URL = "https://ymddwehgifawycwlmtza.supabase.co"
+SUPABASE_URL = "https://ymddwehqifawycwlmtza.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InltZGR3ZWhxaWZhd3ljd2xtdHphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1MjY0NzAsImV4cCI6MjEwODEwMjQ3MH0.aU6WqtIDSqgBWLkCIz_f3fCnBH5KEnAcuYILQek60gU"
 
 headers = {
