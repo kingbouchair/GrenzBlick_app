@@ -1,10 +1,10 @@
 import os
-import datetime
 import requests
+from bs4 import BeautifulSoup
 
-# Supabase Zugangsdaten
 SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://ymddwehqifawycwlmtza.supabase.co')
-SUPABASE_KEY = os.environ.get('SUPABASE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...')
+SUPABASE_KEY = os.environ.get('SUPABASE_KEY', 'DEIN_SUPABASE_KEY')
+
 headers = {
     "apikey": SUPABASE_KEY,
     "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -13,30 +13,34 @@ headers = {
 }
 
 def fetch_and_update():
-    print("Starte automatischen Preis-Sync für Schweizer Tankstellen...")
+    print("Starte automatischen Live-Sync für Schweizer Tankstellen...")
     
-    # Hier liest das Skript die aktuellen TCS/Betreiber-Daten aus.
-    # Beispielhaft gepflegte Live-Datenbanken für das Grenzgebiet Laufenburg/Fricktal:
-    updated_stations = [
-        {"id": "ch_socar_laufenburg", "brand": "SOCAR", "street": "Baslerstrasse 11", "place": "5080 Laufenburg (CH)", "is_open": True, "has_shop": True, "e5_chf": 2.12, "diesel_chf": 2.15},
-        {"id": "ch_oil_laufenburg", "brand": "OIL! tank & go", "street": "Baslerstrasse 17", "place": "5080 Laufenburg (CH)", "is_open": True, "has_shop": False, "e5_chf": 2.12, "diesel_chf": 2.15},
-        {"id": "ch_schraner_sulz", "brand": "Tankstelle Schraner", "street": "Hauptstrasse 32", "place": "5085 Sulz (CH)", "is_open": True, "has_shop": False, "e5_chf": 2.10, "diesel_chf": 2.14},
-        {"id": "ch_tamoil_kaisten", "brand": "Tamoil", "street": "Kaisterfeld 2", "place": "5082 Kaisten (CH)", "is_open": True, "has_shop": False, "e5_chf": 2.11, "diesel_chf": 2.15},
-        {"id": "ch_bp_sisseln", "brand": "BP", "street": "Sisslerstrasse 1", "place": "4334 Sisseln (CH)", "is_open": True, "has_shop": True, "e5_chf": 2.11, "diesel_chf": 2.16},
-        {"id": "ch_coop_laufenburg", "brand": "Coop Pronto", "street": "Laufenburgerstrasse 1", "place": "5080 Laufenburg (CH)", "is_open": True, "has_shop": True, "e5_chf": 2.13, "diesel_chf": 2.16},
-        {"id": "ch_avia_laufenburg", "brand": "AVIA", "street": "Laufenburgerstrasse 30", "place": "5080 Laufenburg (CH)", "is_open": True, "has_shop": True, "e5_chf": 2.14, "diesel_chf": 2.17},
-        {"id": "ch_agrola_kaisten", "brand": "Agrola", "street": "Dorfstrasse 15", "place": "5082 Kaisten (CH)", "is_open": True, "has_shop": False, "e5_chf": 2.14, "diesel_chf": 2.18},
-    ]
+    # 1. Live-Daten von einer Schweizer Preisquelle abrufen (Beispiel-Live-Abfrage)
+    # Hier liest das Skript automatisiert die aktuellen TCS / Benzinpreis-Daten aus
+    try:
+        # Beispielhafte Abfrage der Live-Daten
+        # In der Praxis holt requests.get() die Daten direkt von der Schweizer Preis-API/Webseite
+        response = requests.get("https://ich-tanke.ch/api/stations/laufenburg", timeout=10)
+        live_data = response.json()
+    except Exception as e:
+        print(f"Fehler beim Live-Abruf der Preise: {e}")
+        return
 
-    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
-
-    for st in updated_stations:
-        st["updated_at"] = now_iso
-        res = requests.post(f"{SUPABASE_URL}/rest/v1/swiss_stations", json=st, headers=headers)
-        if res.status_code in [200, 201]:
-            print(f"✅ Updated: {st['brand']} ({st['place']})")
-        else:
-            print(f"❌ Fehler bei {st['brand']}: {res.text}")
+    # 2. Automatisch extrahierte Daten verarbeiten und an Supabase senden
+    for station in live_data:
+        station_payload = {
+            "id": station.get("id"),
+            "brand": station.get("brand"),
+            "street": station.get("street"),
+            "place": station.get("place"),
+            "is_open": True,
+            "has_shop": station.get("has_shop", False),
+            "e5_chf": float(station.get("e5_chf", 0.0)),
+            "diesel_chf": float(station.get("diesel_chf", 0.0))
+        }
+        
+        res = requests.post(f"{SUPABASE_URL}/rest/v1/swiss_stations", json=station_payload, headers=headers)
+        print(f"Station {station.get('brand')} aktualisiert: Status {res.status_code}")
 
 if __name__ == "__main__":
     fetch_and_update()
